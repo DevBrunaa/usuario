@@ -44,6 +44,11 @@ public class UsuarioController {
     public ResponseEntity<Void> deletaUsuarioPorEmail (@PathVariable String email){
         usuarioService.deletarUsuarioPorEmail(email);
         return ResponseEntity.ok().build();
+    }
 
+    @PutMapping
+    public ResponseEntity<UsuarioDTO> atualizaDadoUsuario(@RequestBody UsuarioDTO dto,
+                                                          @RequestHeader("Authorization")  String token){
+        return ResponseEntity.ok(usuarioService.atualizaDadosUsuario(token, dto));
     }
 }
