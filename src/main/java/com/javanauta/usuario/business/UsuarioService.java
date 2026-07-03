@@ -10,7 +10,7 @@ import com.javanauta.usuario.infrastructure.entity.Usuario;
 import com.javanauta.usuario.infrastructure.exceptions.ConflictException;
 import com.javanauta.usuario.infrastructure.exceptions.ResourceNotFoundException;
 import com.javanauta.usuario.infrastructure.repository.EnderecoRepository;
-import com.javanauta.usuario.infrastructure.repository.TelefonRepository;
+import com.javanauta.usuario.infrastructure.repository.TelefoneRepository;
 import com.javanauta.usuario.infrastructure.repository.UsuarioRepository;
 import com.javanauta.usuario.infrastructure.security.JwtUtil;
 import lombok.RequiredArgsConstructor;
@@ -27,7 +27,7 @@ public class UsuarioService {
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
     private final EnderecoRepository enderecoRepository;
-    private final TelefonRepository telefonRepository;
+    private final TelefoneRepository telefoneRepository;
 
     public UsuarioDTO salvarUsuario(UsuarioDTO usuarioDTO) {
         emailExiste(usuarioDTO.getEmail());
@@ -38,12 +38,12 @@ public class UsuarioService {
     }
 
     public void emailExiste(String email) {
-        try{
+        try {
             boolean existe = verificaEmailExistente(email);
             if (existe) {
                 throw new ConflictException("Email já cadastrado" + email);
             }
-        }catch (ConflictException e){
+        } catch (ConflictException e) {
             throw new ConflictException("Email já cadastrado" + e.getCause());
         }
     }
@@ -55,19 +55,21 @@ public class UsuarioService {
 
     public UsuarioDTO buscarUsuarioPorEmail(String email) {
         try {
-                    return usuarioConverter.paraUsuarioDTO(
+            return usuarioConverter.paraUsuarioDTO(
                     usuarioRepository.findByEmail(email)
                             .orElseThrow(
-                () -> new ResourceNotFoundException("Email não encontrado " + email)
+                                    () -> new ResourceNotFoundException("Email não encontrado " + email)
                             )
-                    );
-        }   catch (ResourceNotFoundException e) {
+            );
+        } catch (ResourceNotFoundException e) {
             throw new ResourceNotFoundException("Email não encontrado " + email);
         }
 
-        }
+    }
 
-    public void deletarUsuarioPorEmail(String email) {usuarioRepository.deleteByEmail(email);    }
+    public void deletarUsuarioPorEmail(String email) {
+        usuarioRepository.deleteByEmail(email);
+    }
 
     public UsuarioDTO atualizaDadosUsuario(String token, UsuarioDTO dto) {
 
@@ -79,7 +81,7 @@ public class UsuarioService {
 
         //Busca os dados do usuário nos bancos de dados
         Usuario usuarioEntity = usuarioRepository.findByEmail(email).orElseThrow(() ->
-            new ResourceNotFoundException("Email não localizado " + email));
+                new ResourceNotFoundException("Email não localizado " + email));
 
         //Mesclou os dados que recebemos na requisição DTO com os dados do banco de dados
         Usuario usuario = usuarioConverter.updateUsuario(dto, usuarioEntity);
@@ -88,25 +90,47 @@ public class UsuarioService {
         return usuarioConverter.paraUsuarioDTO(usuarioRepository.save(usuario));
     }
 
-    public EnderecoDTO atualizaEndereco (Long idEndereco, EnderecoDTO enderecoDTO) {
-            // Busca o endereço pelo Id nos bancos de dados, caso nao encontre joga um erro
-            Endereco entity = enderecoRepository.findById(idEndereco).orElseThrow(() ->
-                    new ResourceNotFoundException("Id não encontrado " + idEndereco));
+    public EnderecoDTO atualizaEndereco(Long idEndereco, EnderecoDTO enderecoDTO) {
+        // Busca o endereço pelo Id nos bancos de dados, caso nao encontre joga um erro
+        Endereco entity = enderecoRepository.findById(idEndereco).orElseThrow(() ->
+                new ResourceNotFoundException("Id não encontrado " + idEndereco));
 
         // Mescla os dados novos com os antigos
         Endereco endereco = usuarioConverter.updateEndereco(enderecoDTO, entity);
 
         // Salva os dados convertidos e retorna para o UsuarioDTO
-        return  usuarioConverter.paraEnderecoDTO(enderecoRepository.save(endereco));
+        return usuarioConverter.paraEnderecoDTO(enderecoRepository.save(endereco));
     }
 
-    public TelefoneDTO atualizaTelefone (Long idTelefone, TelefoneDTO dto) {
+    public TelefoneDTO atualizaTelefone(Long idTelefone, TelefoneDTO dto) {
 
-        Telefone entity = telefonRepository.findById(idTelefone).orElseThrow(() ->
+        Telefone entity = telefoneRepository.findById(idTelefone).orElseThrow(() ->
                 new ResourceNotFoundException("Id não encontrado " + idTelefone));
 
         Telefone telefone = usuarioConverter.updateTelefone(dto, entity);
 
-        return usuarioConverter.paraTelefoneDTO(telefonRepository.save(telefone));
+        return usuarioConverter.paraTelefoneDTO(telefoneRepository.save(telefone));
     }
+
+    public EnderecoDTO cadastroEndereco(String token, EnderecoDTO dto) {
+        String email = jwtUtil.extractUsername(token.substring(7));
+        Usuario usuario = usuarioRepository.findByEmail(email).orElseThrow(() ->
+                new ResourceNotFoundException("Email não encontrado " + email));
+
+        Endereco endereco = usuarioConverter.paraEnderecoEntity(dto, usuario.getId());
+        Endereco enderecoEntity = enderecoRepository.save(endereco);
+        return usuarioConverter.paraEnderecoDTO(enderecoEntity);
+
+    }
+
+    public TelefoneDTO cadastroTelefone(String token, TelefoneDTO dto) {
+        String email = jwtUtil.extractUsername(token.substring(7));
+        Usuario usuario = usuarioRepository.findByEmail(email).orElseThrow(() ->
+                new ResourceNotFoundException("Email não encontrado " + email));
+
+        Telefone telefone = usuarioConverter.paraTelefoneEntity(dto, usuario.getId());
+        Telefone telefoneEntity = telefoneRepository.save(telefone);
+        return usuarioConverter.paraTelefoneDTO(telefoneEntity);
+    }
+
 }
