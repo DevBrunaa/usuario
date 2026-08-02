@@ -2,9 +2,11 @@ package com.javanauta.usuario.controller;
 
 
 import com.javanauta.usuario.business.UsuarioService;
+import com.javanauta.usuario.business.ViaCepService;
 import com.javanauta.usuario.business.dto.EnderecoDTO;
 import com.javanauta.usuario.business.dto.TelefoneDTO;
 import com.javanauta.usuario.business.dto.UsuarioDTO;
+import com.javanauta.usuario.infrastructure.clients.ViaCepDTO;
 import com.javanauta.usuario.infrastructure.security.JwtUtil;
 import com.javanauta.usuario.infrastructure.security.SecurityConfig;
 import io.swagger.v3.oas.annotations.Operation;
@@ -29,6 +31,7 @@ public class UsuarioController {
     private final UsuarioService usuarioService;
     private final AuthenticationManager authenticationManager;
     private final JwtUtil jwtUtil;
+    private  final ViaCepService viaCepService;
 
     @PostMapping
     @Operation(summary = "Salvar Usuários", description = "Cria um novo usuário")
@@ -129,5 +132,15 @@ public class UsuarioController {
     public ResponseEntity<TelefoneDTO> cadastraTelefone(@RequestBody TelefoneDTO dto,
                                                         @RequestHeader(name = "Authorization", required = false) String token){
         return ResponseEntity.ok(usuarioService.cadastroTelefone(token, dto));
+    }
+
+    @GetMapping("/endereco/{cep}")
+        @Operation(summary = "Busca Dados De CEP", description = "Busca dados de cep")
+    @ApiResponse(responseCode = "200", description = "CEP salvo com sucesso")
+    @ApiResponse(responseCode = "403", description = "CEP não encontrado")
+    @ApiResponse(responseCode = "500", description = "Erro de servidor")
+    @ApiResponse(responseCode = "401", description = "Credenciais inválidas")
+    public ResponseEntity<ViaCepDTO> buscaDadosCep(@PathVariable ("cep") String cep){
+        return ResponseEntity.ok(viaCepService.buscarDadosEndereco(cep));
     }
 }
